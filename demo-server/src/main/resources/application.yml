@@ -1,0 +1,101 @@
+
+server:
+  port: 8001
+
+spring:
+  application:
+    name: demo-server
+  cloud:
+      stream:
+        bindings:
+
+          p-alerts-all:
+            destination: demo.alerts
+
+          p-alerts-critical-warn:
+            destination: demo.alerts
+
+          p-alerts-rate_limit:
+            destination: demo.alerts
+
+          c-alerts-critical: # channel tag
+            destination: demo.alerts    # exchange name
+            group: critical       # queue name
+            consumer:
+              concurrency: 5
+
+          c-alerts-rate_limit:
+            destination: demo.alerts
+            group: rate_limit
+
+        rabbit:
+          bindings:
+            c-alerts-critical:
+              consumer:
+                bindingRoutingKey: "critical.*"
+
+            c-alerts-rate_limit:
+              consumer:
+                bindingRoutingKey: "*.rate_limit"
+
+            p-alerts-all:
+              producer:
+                routing-key-expression: '''critical.rate_limit'''
+
+            p-alerts-critical-warn:
+              producer:
+                routing-key-expression: '''critical.hello'''
+
+            p-alerts-rate_limit:
+              producer:
+                routing-key-expression: '''world.rate_limit'''
+
+        default-binder: local_rabbit
+        binders:
+          local_rabbit:
+            type: rabbit
+            environment:
+              spring:
+                rabbitmq:
+                  host: localhost
+                  port: 5672
+                  username: guest
+                  password: guest
+                  virtual-host: /
+  redis:
+    database: 0
+    host: 127.0.0.1
+    port: 6379
+    password: cc
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/test
+    username: root
+    password: caiwei
+    hikari:
+      connection-timeout: 3000
+      maximum-pool-size: 15
+      auto-commit: true
+      connection-test-query: SELECT 1
+      data-source-properties:
+        encoding: utf-8
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+eureka:
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+  client:
+    healthcheck:
+      enabled: true
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    enabled: true
+
+ribbon:
+  eager-load:
+    enabled: true
+
